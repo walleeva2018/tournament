@@ -9,7 +9,7 @@ const selectedTournament = ref(null)
 
 onMounted(async () => {
   try {
-    const res = await fetch('http://localhost:5000/api/tournaments')
+    const res = await fetch('https://tournament-topaz.vercel.app/api/tournaments')
     tournaments.value = await res.json()
     if (tournaments.value.length > 0) {
       selectedTournament.value = tournaments.value[0]

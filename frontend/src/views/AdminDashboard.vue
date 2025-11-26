@@ -13,7 +13,7 @@ const score = ref('')
 const krunkerStats = ref([])
 
 const fetchTournaments = async () => {
-  const res = await fetch('http://localhost:5000/api/tournaments')
+  const res = await fetch('https://tournament-topaz.vercel.app/api/tournaments')
   tournaments.value = await res.json()
   if (tournaments.value.length > 0 && !selectedTournament.value) {
     selectedTournament.value = tournaments.value[0]
@@ -72,7 +72,7 @@ const saveMatch = async (match) => {
   }
 
   try {
-    await fetch(`http://localhost:5000/api/tournaments/${selectedTournament.value._id}/matches/${match._id}`, {
+    await fetch(`https://tournament-topaz.vercel.app/api/tournaments/${selectedTournament.value._id}/matches/${match._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
