@@ -5,36 +5,85 @@ defineProps({
 </script>
 
 <template>
-  <div class="grid sm:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+  <div class="grid sm:grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
     <div v-for="(players, groupName) in tournament.groups" :key="groupName"
-         class="bg-gradient-to-br from-gray-900/80 to-gray-800/80 p-4 sm:p-6 rounded-xl border border-gray-700/50 shadow-xl">
-      <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-blue-400 flex items-center gap-2">
-        <span class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-blue-600 rounded-full text-white text-sm sm:text-base">{{ groupName }}</span>
-        <span>Group {{ groupName }}</span>
+         class="relative bg-gradient-to-br from-indigo-950/50 via-gray-900/80 to-gray-900/90 p-5 sm:p-7 rounded-2xl border-2 border-indigo-500/30 shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 backdrop-blur-sm overflow-hidden group">
+
+      <!-- Glow Effect -->
+      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+      <h3 class="relative text-xl sm:text-2xl font-black mb-4 sm:mb-5 flex items-center gap-3 pb-3 border-b-2 border-indigo-500/30">
+        <span class="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl text-white text-base sm:text-lg shadow-lg shadow-indigo-500/50 font-black">{{ groupName }}</span>
+        <span class="bg-gradient-to-r from-indigo-300 to-purple-300 text-transparent bg-clip-text">Group {{ groupName }}</span>
       </h3>
-      <div class="space-y-2">
+
+      <div class="relative space-y-3">
         <div v-for="(player, index) in players" :key="player._id"
-             :class="['flex items-center justify-between p-2 sm:p-3 rounded-lg transition-all duration-200',
-               index === 0 ? 'bg-gradient-to-r from-yellow-900/30 to-yellow-800/20 border border-yellow-700/30' :
-               index === 1 ? 'bg-gradient-to-r from-gray-700/30 to-gray-600/20 border border-gray-600/30' :
-               'bg-gray-800/50 hover:bg-gray-700/50']"
+             :class="[
+               'flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden group/item',
+               index === 0 ? 'bg-gradient-to-r from-yellow-900/40 via-yellow-800/30 to-amber-900/40 border-2 border-yellow-500/50 shadow-yellow-500/20' :
+               index === 1 ? 'bg-gradient-to-r from-gray-800/50 via-gray-700/40 to-gray-800/50 border-2 border-gray-500/50 shadow-gray-500/20' :
+               index === 2 ? 'bg-gradient-to-r from-orange-950/40 via-orange-900/30 to-orange-950/40 border-2 border-orange-700/50 shadow-orange-700/20' :
+               'bg-gray-800/60 border border-gray-700/40 hover:bg-gray-700/60 hover:border-gray-600/60'
+             ]"
         >
-          <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <span :class="['font-mono w-6 sm:w-8 text-center text-xs sm:text-sm font-bold',
-              index === 0 ? 'text-yellow-400' : index === 1 ? 'text-gray-400' : 'text-gray-500']">
+          <!-- Shimmer Effect for Top 3 -->
+          <div v-if="index < 3" class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover/item:translate-x-full transition-transform duration-1000"></div>
+
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 relative z-10">
+            <span :class="[
+              'font-black w-8 sm:w-10 text-center text-sm sm:text-base',
+              index === 0 ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' :
+              index === 1 ? 'text-gray-300 drop-shadow-[0_0_8px_rgba(209,213,219,0.5)]' :
+              index === 2 ? 'text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]' :
+              'text-gray-500'
+            ]">
               #{{ index + 1 }}
             </span>
-            <div class="relative flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12">
-              <img :src="player.avatarUrl" :alt="player.name"
-                   class="w-full h-full rounded-full bg-gray-700 object-cover object-center ring-2 ring-gray-600" />
-              <div v-if="index === 0" class="absolute -top-1 -right-1 text-lg">🥇</div>
-              <div v-if="index === 1" class="absolute -top-1 -right-1 text-lg">🥈</div>
+
+            <div class="relative flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14">
+              <img :src="player.name === 'Zubair Ahmed Rafi' ? '/avatars/default-avatar.svg' : player.avatarUrl"
+                   :alt="player.name"
+                   :class="[
+                     'w-full h-full rounded-full bg-gray-700 object-cover object-center transition-all duration-300',
+                     index === 0 ? 'ring-4 ring-yellow-500/60 shadow-lg shadow-yellow-500/50' :
+                     index === 1 ? 'ring-4 ring-gray-400/60 shadow-lg shadow-gray-400/50' :
+                     index === 2 ? 'ring-4 ring-orange-500/60 shadow-lg shadow-orange-500/50' :
+                     'ring-2 ring-gray-600/60'
+                   ]"
+              />
+              <div v-if="index === 0" class="absolute -top-1 -right-1 text-2xl drop-shadow-lg animate-bounce">🥇</div>
+              <div v-if="index === 1" class="absolute -top-1 -right-1 text-2xl drop-shadow-lg animate-bounce delay-100">🥈</div>
+              <div v-if="index === 2" class="absolute -top-1 -right-1 text-2xl drop-shadow-lg animate-bounce delay-200">🥉</div>
             </div>
-            <span class="text-sm sm:text-base font-medium truncate">{{ player.name }}</span>
+
+            <span :class="[
+              'text-sm sm:text-base font-bold truncate',
+              index === 0 ? 'text-yellow-100' :
+              index === 1 ? 'text-gray-100' :
+              index === 2 ? 'text-orange-100' :
+              'text-gray-300'
+            ]">{{ player.name }}</span>
           </div>
-          <span class="font-bold text-xs sm:text-sm text-gray-400 flex-shrink-0 ml-2">0 PTS</span>
+
+          <span :class="[
+            'font-black text-xs sm:text-sm flex-shrink-0 ml-2 px-3 py-1 rounded-lg',
+            index === 0 ? 'bg-yellow-500/20 text-yellow-300' :
+            index === 1 ? 'bg-gray-500/20 text-gray-300' :
+            index === 2 ? 'bg-orange-500/20 text-orange-300' :
+            'bg-gray-700/40 text-gray-400'
+          ]">0 PTS</span>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.delay-100 {
+  animation-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
+</style>

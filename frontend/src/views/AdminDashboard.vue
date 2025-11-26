@@ -96,61 +96,84 @@ const getMatchTitle = (match) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 sm:p-6 lg:p-8">
-    <div class="max-w-7xl mx-auto">
-      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4">
-        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-          Admin Dashboard
-        </h1>
+  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute top-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4 animate-slide-down">
+        <div>
+          <div class="inline-block mb-2 px-4 py-1 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full border border-purple-500/30 backdrop-blur-sm">
+            <span class="text-purple-300 text-xs font-semibold tracking-wider uppercase">Admin Panel</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-400 text-transparent bg-clip-text drop-shadow-2xl">
+            Tournament Control Center
+          </h1>
+        </div>
         <button @click="logout"
-                class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 px-4 sm:px-6 py-2 rounded-lg font-semibold shadow-lg transition-all duration-200 hover:scale-105">
-          Logout
+                class="group relative bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 px-6 sm:px-8 py-3 rounded-xl font-bold shadow-2xl shadow-red-500/30 transition-all duration-300 hover:scale-105 overflow-hidden">
+          <span class="relative z-10">Logout</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
       </div>
 
-      <div class="flex gap-2 sm:gap-4 mb-6 sm:mb-8 overflow-x-auto pb-2 scrollbar-hide">
+      <div class="flex gap-3 sm:gap-4 mb-8 sm:mb-10 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-gray-800">
         <button
           v-for="t in tournaments"
           :key="t._id"
           @click="selectedTournament = t; editingMatchId = null"
-          :class="['px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-bold whitespace-nowrap text-sm sm:text-base transition-all duration-200 shadow-lg',
+          :class="[
+            'relative px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-bold whitespace-nowrap text-sm sm:text-base transition-all duration-300 group overflow-hidden',
             selectedTournament?._id === t._id
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600 scale-105 shadow-blue-500/50'
-              : 'bg-gray-800 hover:bg-gray-700 hover:scale-105']"
+              ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 text-white scale-110 shadow-2xl shadow-purple-500/50'
+              : 'bg-gray-800/60 text-gray-300 hover:bg-gray-700/80 hover:scale-105 backdrop-blur-sm border border-gray-700/50'
+          ]"
         >
-          {{ t.gameName }}
+          <span class="relative z-10">{{ t.gameName }}</span>
+          <div v-if="selectedTournament?._id === t._id" class="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-30 blur-xl"></div>
         </button>
       </div>
 
-      <div v-if="selectedTournament" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <div v-if="selectedTournament" class="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       <div v-for="match in selectedTournament.matches" :key="match._id"
-           class="bg-gradient-to-br from-gray-900/80 to-gray-800/80 p-3 sm:p-4 rounded-xl border border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-200">
+           class="relative bg-gradient-to-br from-slate-900/90 to-gray-900/90 p-4 sm:p-5 rounded-2xl border-2 border-purple-500/30 shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm overflow-hidden group">
 
-        <div class="flex justify-between text-[10px] sm:text-xs text-gray-500 mb-2 sm:mb-3">
-          <span class="font-semibold">{{ match.round }} - Group {{ match.group }}</span>
-          <span :class="['px-2 py-0.5 rounded-full text-[10px] font-bold',
-            match.winner ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400']">
+        <!-- Glow Effect -->
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+        <div class="relative flex justify-between text-[10px] sm:text-xs mb-3 sm:mb-4 uppercase tracking-wider">
+          <span class="font-bold text-gray-400 bg-gray-800/60 px-3 py-1 rounded-lg">{{ match.round }} - Group {{ match.group }}</span>
+          <span :class="[
+            'px-3 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-lg',
+            match.winner ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-green-500/50' : 'bg-gradient-to-r from-yellow-600 to-orange-600 text-white shadow-yellow-500/50'
+          ]">
             {{ match.winner ? '✓ Done' : '⏱ Pending' }}
           </span>
         </div>
 
-        <div class="font-bold mb-2 sm:mb-3 text-center text-sm sm:text-base">{{ getMatchTitle(match) }}</div>
+        <div class="relative font-black mb-3 sm:mb-4 text-center text-sm sm:text-base bg-gradient-to-r from-purple-300 to-pink-300 text-transparent bg-clip-text">{{ getMatchTitle(match) }}</div>
         
-        <div v-if="match.winner" class="text-center text-sm text-green-400 mb-2">
-          Winner: {{ match.winner.name }}
+        <div v-if="match.winner" class="relative text-center text-sm font-bold text-green-300 mb-3 bg-green-900/20 py-2 px-3 rounded-lg border border-green-500/30">
+          🏆 Winner: {{ match.winner.name }}
         </div>
-        <div v-if="match.score" class="text-center text-sm text-gray-400 mb-2">
+        <div v-if="match.score" class="relative text-center text-sm font-bold text-white mb-3 bg-purple-900/20 py-2 px-3 rounded-lg border border-purple-500/30">
           Score: {{ match.score }}
         </div>
 
         <button
           @click="toggleEdit(match)"
-          :class="['w-full py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+          :class="[
+            'relative w-full py-3 rounded-xl text-sm font-black transition-all duration-300 overflow-hidden group/btn shadow-lg',
             editingMatchId === match._id
-              ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600'
-              : 'bg-gray-700 hover:bg-gray-600']"
+              ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-blue-500/50'
+              : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white shadow-gray-700/50 hover:scale-105'
+          ]"
         >
-          {{ editingMatchId === match._id ? '✕ Close' : '✏️ Edit Result' }}
+          <span class="relative z-10">{{ editingMatchId === match._id ? '✕ Close' : '✏️ Edit Result' }}</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
         </button>
 
         <!-- Inline Edit Form -->
