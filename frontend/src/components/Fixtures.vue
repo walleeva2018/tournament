@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   tournament: Object
 })
 
@@ -10,11 +12,31 @@ const parseKrunkerStats = (scoreString) => {
     return null
   }
 }
+
+const defaultAvatar = '/avatars/default-avatar.svg'
+
+const handleImageError = (event) => {
+  event.target.src = defaultAvatar
+}
+
+// Sort matches: completed matches (with winners) first, then pending
+const sortedMatches = computed(() => {
+  if (!props.tournament?.matches) return []
+
+  return [...props.tournament.matches].sort((a, b) => {
+    // If both have winners or both don't, maintain original order
+    if ((a.winner && b.winner) || (!a.winner && !b.winner)) return 0
+    // If a has winner and b doesn't, a comes first
+    if (a.winner && !b.winner) return -1
+    // If b has winner and a doesn't, b comes first
+    return 1
+  })
+})
 </script>
 
 <template>
   <div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-    <div v-for="match in tournament.matches" :key="match._id"
+    <div v-for="match in sortedMatches" :key="match._id"
          :class="[
            'relative bg-gradient-to-br from-slate-900/90 to-gray-900/90 p-4 sm:p-5 rounded-2xl border-2 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.03] backdrop-blur-sm overflow-hidden group',
            match.winner ? 'border-green-500/40 shadow-green-500/20' : 'border-purple-500/30 shadow-purple-500/20'
@@ -38,9 +60,14 @@ const parseKrunkerStats = (scoreString) => {
       <div v-if="!match.players || match.players.length === 0" class="relative mb-4">
         <div class="flex justify-between items-center gap-3">
           <div class="flex flex-col items-center flex-1 min-w-0 group/player">
+            <!-- Trophy above winner -->
+            <div v-if="match.winner?._id === match.player1?._id" class="text-3xl sm:text-4xl mb-1 animate-bounce drop-shadow-lg">
+              🏆
+            </div>
             <div class="relative mb-2 w-14 h-14 sm:w-16 sm:h-16 overflow-hidden rounded-full flex-shrink-0 transition-transform duration-300 group-hover/player:scale-110">
-              <img :src="match.player1?.name === 'Zubair Ahmed Rafi' ? '/avatars/default-avatar.svg' : match.player1?.avatarUrl"
+              <img :src="match.player1?.avatarUrl || defaultAvatar"
                    :alt="match.player1?.name"
+                   @error="handleImageError"
                    :class="[
                      'w-full h-full bg-gray-700 object-cover object-center rounded-full transition-all duration-300',
                      match.winner?._id === match.player1?._id ? 'ring-4 ring-green-500 shadow-lg shadow-green-500/50' : 'ring-2 ring-purple-500/50'
@@ -64,9 +91,14 @@ const parseKrunkerStats = (scoreString) => {
           </div>
 
           <div class="flex flex-col items-center flex-1 min-w-0 group/player">
+            <!-- Trophy above winner -->
+            <div v-if="match.winner?._id === match.player2?._id" class="text-3xl sm:text-4xl mb-1 animate-bounce drop-shadow-lg">
+              🏆
+            </div>
             <div class="relative mb-2 w-14 h-14 sm:w-16 sm:h-16 overflow-hidden rounded-full flex-shrink-0 transition-transform duration-300 group-hover/player:scale-110">
-              <img :src="match.player2?.name === 'Zubair Ahmed Rafi' ? '/avatars/default-avatar.svg' : match.player2?.avatarUrl"
+              <img :src="match.player2?.avatarUrl || defaultAvatar"
                    :alt="match.player2?.name"
+                   @error="handleImageError"
                    :class="[
                      'w-full h-full bg-gray-700 object-cover object-center rounded-full transition-all duration-300',
                      match.winner?._id === match.player2?._id ? 'ring-4 ring-green-500 shadow-lg shadow-green-500/50' : 'ring-2 ring-purple-500/50'
@@ -95,8 +127,9 @@ const parseKrunkerStats = (scoreString) => {
         <div class="grid grid-cols-4 gap-2 sm:gap-3">
           <div v-for="p in match.players" :key="p._id" class="flex flex-col items-center group/player">
             <div class="relative w-12 h-12 sm:w-14 sm:h-14 overflow-hidden rounded-full flex-shrink-0 mb-1 transition-transform duration-300 group-hover/player:scale-110">
-              <img :src="p.name === 'Zubair Ahmed Rafi' ? '/avatars/default-avatar.svg' : p.avatarUrl"
+              <img :src="p.avatarUrl || defaultAvatar"
                    :alt="p.name"
+                   @error="handleImageError"
                    class="w-full h-full object-cover object-center ring-2 ring-purple-500/60 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-300 group-hover/player:ring-4 group-hover/player:ring-pink-500"
               />
             </div>
@@ -109,20 +142,18 @@ const parseKrunkerStats = (scoreString) => {
       <div v-if="match.winner" class="relative border-t-2 border-green-500/30 pt-3 sm:pt-4 mt-3 sm:mt-4">
         <!-- Table Tennis: Winner + Score -->
         <div v-if="tournament.gameName === 'Table Tennis'" class="text-center">
-          <div class="text-green-300 font-black text-sm sm:text-base mb-2 flex items-center justify-center gap-2">
-            <span class="text-2xl animate-bounce">🏆</span>
-            <span class="bg-gradient-to-r from-green-300 to-emerald-300 text-transparent bg-clip-text">{{ match.winner.name }}</span>
+          <div class="text-green-300 font-black text-sm sm:text-base mb-2">
+            <span class="bg-gradient-to-r from-green-300 to-emerald-300 text-transparent bg-clip-text">Winner: {{ match.winner.name }}</span>
           </div>
           <div v-if="match.score" class="text-xs sm:text-sm text-white font-bold bg-gradient-to-r from-green-600 to-emerald-600 py-2 px-4 rounded-lg inline-block shadow-lg shadow-green-500/30">
-            {{ match.score }}
+            Score: {{ match.score }}
           </div>
         </div>
 
         <!-- Krunker: Stats Table -->
         <div v-else-if="tournament.gameName === 'Krunker' && parseKrunkerStats(match.score)" class="text-[10px] sm:text-xs">
-          <div class="text-green-300 font-black text-center mb-3 text-sm sm:text-base flex items-center justify-center gap-2">
-            <span class="text-2xl animate-bounce">🏆</span>
-            <span class="bg-gradient-to-r from-green-300 to-emerald-300 text-transparent bg-clip-text">{{ match.winner.name }}</span>
+          <div class="text-green-300 font-black text-center mb-3 text-sm sm:text-base">
+            <span class="bg-gradient-to-r from-green-300 to-emerald-300 text-transparent bg-clip-text">Winner: {{ match.winner.name }}</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left bg-gray-900/50 rounded-xl overflow-hidden border border-gray-700/50">

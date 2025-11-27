@@ -1,12 +1,76 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   tournament: Object
+})
+
+const defaultAvatar = '/avatars/default-avatar.svg'
+
+const handleImageError = (event) => {
+  event.target.src = defaultAvatar
+}
+
+// Calculate player stats (wins, matches played, points)
+const calculatePlayerStats = (playerId, groupName) => {
+  if (!props.tournament?.matches) return { wins: 0, matchesPlayed: 0, points: 0 }
+
+  const groupMatches = props.tournament.matches.filter(m => m.group === groupName)
+
+  let wins = 0
+  let matchesPlayed = 0
+
+  groupMatches.forEach(match => {
+    // Check if player is in this match
+    const isPlayer1 = match.player1?._id === playerId
+    const isPlayer2 = match.player2?._id === playerId
+    const isInBattleRoyale = match.players?.some(p => p._id === playerId)
+
+    if (isPlayer1 || isPlayer2 || isInBattleRoyale) {
+      // Only count if match has a winner (match is complete)
+      if (match.winner) {
+        matchesPlayed++
+        if (match.winner._id === playerId) {
+          wins++
+        }
+      }
+    }
+  })
+
+  // 3 points per win for Table Tennis
+  const points = wins * 3
+
+  return { wins, matchesPlayed, points }
+}
+
+// Sort players by points (descending), then by wins
+const sortedGroups = computed(() => {
+  if (!props.tournament?.groups) return {}
+
+  const sorted = {}
+
+  Object.entries(props.tournament.groups).forEach(([groupName, players]) => {
+    sorted[groupName] = [...players].sort((a, b) => {
+      const statsA = calculatePlayerStats(a._id, groupName)
+      const statsB = calculatePlayerStats(b._id, groupName)
+
+      // Sort by points first
+      if (statsB.points !== statsA.points) {
+        return statsB.points - statsA.points
+      }
+
+      // If points are equal, sort by wins
+      return statsB.wins - statsA.wins
+    })
+  })
+
+  return sorted
 })
 </script>
 
 <template>
   <div class="grid sm:grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
-    <div v-for="(players, groupName) in tournament.groups" :key="groupName"
+    <div v-for="(players, groupName) in sortedGroups" :key="groupName"
          class="relative bg-gradient-to-br from-indigo-950/50 via-gray-900/80 to-gray-900/90 p-5 sm:p-7 rounded-2xl border-2 border-indigo-500/30 shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 backdrop-blur-sm overflow-hidden group">
 
       <!-- Glow Effect -->
@@ -42,8 +106,9 @@ defineProps({
             </span>
 
             <div class="relative flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14">
-              <img :src="player.name === 'Zubair Ahmed Rafi' ? '/avatars/default-avatar.svg' : player.avatarUrl"
+              <img :src="player.avatarUrl || defaultAvatar"
                    :alt="player.name"
+                   @error="handleImageError"
                    :class="[
                      'w-full h-full rounded-full bg-gray-700 object-cover object-center transition-all duration-300',
                      index === 0 ? 'ring-4 ring-yellow-500/60 shadow-lg shadow-yellow-500/50' :
@@ -52,9 +117,6 @@ defineProps({
                      'ring-2 ring-gray-600/60'
                    ]"
               />
-              <div v-if="index === 0" class="absolute -top-1 -right-1 text-2xl drop-shadow-lg animate-bounce">🥇</div>
-              <div v-if="index === 1" class="absolute -top-1 -right-1 text-2xl drop-shadow-lg animate-bounce delay-100">🥈</div>
-              <div v-if="index === 2" class="absolute -top-1 -right-1 text-2xl drop-shadow-lg animate-bounce delay-200">🥉</div>
             </div>
 
             <span :class="[
@@ -66,13 +128,49 @@ defineProps({
             ]">{{ player.name }}</span>
           </div>
 
-          <span :class="[
-            'font-black text-xs sm:text-sm flex-shrink-0 ml-2 px-3 py-1 rounded-lg',
-            index === 0 ? 'bg-yellow-500/20 text-yellow-300' :
-            index === 1 ? 'bg-gray-500/20 text-gray-300' :
-            index === 2 ? 'bg-orange-500/20 text-orange-300' :
-            'bg-gray-700/40 text-gray-400'
-          ]">0 PTS</span>
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-2">
+            <!-- Matches Played -->
+            <div class="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
+              <span class="text-[8px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Played</span>
+              <span :class="[
+                'font-black text-xs sm:text-sm px-2 py-1 rounded-lg w-full text-center',
+                index === 0 ? 'bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-500/40' :
+                index === 1 ? 'bg-gray-500/20 text-gray-300 ring-1 ring-gray-500/40' :
+                index === 2 ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/40' :
+                'bg-gray-700/40 text-gray-400 ring-1 ring-gray-600/40'
+              ]">
+                {{ calculatePlayerStats(player._id, groupName).matchesPlayed || 'N/A' }}
+              </span>
+            </div>
+
+            <!-- Wins -->
+            <div class="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
+              <span class="text-[8px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Wins</span>
+              <span :class="[
+                'font-black text-xs sm:text-sm px-2 py-1 rounded-lg w-full text-center',
+                index === 0 ? 'bg-green-500/20 text-green-300 ring-1 ring-green-500/40' :
+                index === 1 ? 'bg-green-500/15 text-green-300 ring-1 ring-green-500/30' :
+                index === 2 ? 'bg-green-500/10 text-green-300 ring-1 ring-green-500/25' :
+                'bg-gray-700/40 text-gray-400 ring-1 ring-gray-600/40'
+              ]">
+                {{ calculatePlayerStats(player._id, groupName).wins || 'N/A' }}
+              </span>
+            </div>
+
+            <!-- Points -->
+            <div class="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
+              <span class="text-[8px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Points</span>
+              <span :class="[
+                'font-black text-xs sm:text-sm px-2 py-1 rounded-lg w-full text-center',
+                index === 0 ? 'bg-yellow-500/30 text-yellow-200 ring-2 ring-yellow-500/60' :
+                index === 1 ? 'bg-gray-500/30 text-gray-200 ring-2 ring-gray-500/60' :
+                index === 2 ? 'bg-orange-500/30 text-orange-200 ring-2 ring-orange-500/60' :
+                'bg-gray-700/50 text-gray-300 ring-2 ring-gray-600/60'
+              ]">
+                {{ calculatePlayerStats(player._id, groupName).points || 'N/A' }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
