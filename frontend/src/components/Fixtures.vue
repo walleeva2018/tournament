@@ -1,9 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   tournament: Object
 })
+
+const searchQuery = ref('')
 
 const parseKrunkerStats = (scoreString) => {
   try {
@@ -20,10 +22,31 @@ const handleImageError = (event) => {
 }
 
 // Sort matches: completed matches (with winners) first, then pending
+// Also filter by search query
 const sortedMatches = computed(() => {
   if (!props.tournament?.matches) return []
 
-  return [...props.tournament.matches].sort((a, b) => {
+  let matches = [...props.tournament.matches]
+
+  // Filter by search query if present
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim()
+    matches = matches.filter(match => {
+      // For 1v1 matches
+      if (match.player1 && match.player2) {
+        return match.player1.name.toLowerCase().includes(query) ||
+               match.player2.name.toLowerCase().includes(query)
+      }
+      // For Krunker (4 players)
+      if (match.players && match.players.length > 0) {
+        return match.players.some(p => p.name.toLowerCase().includes(query))
+      }
+      return false
+    })
+  }
+
+  // Sort: completed matches first, then pending
+  return matches.sort((a, b) => {
     // If both have winners or both don't, maintain original order
     if ((a.winner && b.winner) || (!a.winner && !b.winner)) return 0
     // If a has winner and b doesn't, a comes first
@@ -35,7 +58,41 @@ const sortedMatches = computed(() => {
 </script>
 
 <template>
-  <div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+  <div>
+    <!-- Search Input -->
+    <div class="mb-6">
+      <div class="relative max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by player name..."
+          class="block w-full pl-10 pr-3 py-3 border border-gray-700 rounded-lg bg-gray-900/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+        />
+        <button
+          v-if="searchQuery"
+          @click="searchQuery = ''"
+          class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div v-if="searchQuery && sortedMatches.length === 0" class="mt-3 text-gray-400 text-sm">
+        No matches found for "{{ searchQuery }}"
+      </div>
+      <div v-if="searchQuery && sortedMatches.length > 0" class="mt-3 text-gray-400 text-sm">
+        Found {{ sortedMatches.length }} match{{ sortedMatches.length !== 1 ? 'es' : '' }}
+      </div>
+    </div>
+
+    <!-- Matches Grid -->
+    <div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
     <div v-for="match in sortedMatches" :key="match._id"
          :class="[
            'relative bg-gradient-to-br from-slate-900/90 to-gray-900/90 p-4 sm:p-5 rounded-2xl border-2 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.03] backdrop-blur-sm overflow-hidden group',
@@ -188,6 +245,7 @@ const sortedMatches = computed(() => {
         </div>
       </div>
 
+    </div>
     </div>
   </div>
 </template>
