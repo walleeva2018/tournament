@@ -11,39 +11,133 @@ const handleImageError = (event) => {
   event.target.src = defaultAvatar
 }
 
-// Calculate player stats (wins, matches played, points)
+// Parse Table Tennis score and calculate points
+const parseTableTennisScore = (scoreString, isWinner, isPlayer1) => {
+  if (!scoreString || props.tournament?.gameName !== 'Table Tennis') return 0
+
+  try {
+    // Score format: "11-3,8-11,11-1" or "11-5,11-9" (comma-separated sets)
+    const sets = scoreString.split(',').map(set => {
+      const [score1, score2] = set.trim().split('-').map(Number)
+      return { score1, score2 }
+    })
+
+    let totalPoints = 0
+
+    // Calculate point differential for each set
+    sets.forEach(set => {
+      if (isPlayer1) {
+        totalPoints += (set.score1 - set.score2)
+      } else {
+        totalPoints += (set.score2 - set.score1)
+      }
+    })
+
+    // Add bonus for 2-set win
+    if (sets.length === 2 && isWinner) {
+      totalPoints += 5
+    } else if (sets.length === 2 && !isWinner) {
+      totalPoints -= 5
+    }
+
+    return totalPoints
+  } catch {
+    return 0
+  }
+}
+
+// Parse Krunker stats and get total kills for a player
+const getKrunkerKills = (playerId) => {
+  if (!props.tournament?.matches || props.tournament?.gameName !== 'Krunker') return 0
+
+  let totalKills = 0
+
+  props.tournament.matches.forEach(match => {
+    if (match.score) {
+      try {
+        const stats = JSON.parse(match.score)
+        const playerStat = stats.find(s => s.playerId === playerId)
+        if (playerStat) {
+          totalKills += playerStat.kills || 0
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  })
+
+  return totalKills
+}
+
+// Get total damage for Krunker player (damage = match count)
+const getKrunkerDamage = (playerId) => {
+  if (!props.tournament?.matches || props.tournament?.gameName !== 'Krunker') return 0
+
+  let totalDamage = 0
+
+  props.tournament.matches.forEach(match => {
+    if (match.score) {
+      try {
+        const stats = JSON.parse(match.score)
+        const playerStat = stats.find(s => s.playerId === playerId)
+        if (playerStat) {
+          totalDamage += playerStat.damage || 0
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  })
+
+  return totalDamage
+}
+
+// Calculate player stats (wins, matches played, points/kills)
 const calculatePlayerStats = (playerId, groupName) => {
   if (!props.tournament?.matches) return { wins: 0, matchesPlayed: 0, points: 0 }
+
+  // For Krunker, return kills as points and damage as match count
+  if (props.tournament?.gameName === 'Krunker') {
+    return {
+      wins: 0, // Not used for Krunker
+      matchesPlayed: getKrunkerDamage(playerId), // Damage = Match count
+      points: getKrunkerKills(playerId) // Kills = Points
+    }
+  }
 
   const groupMatches = props.tournament.matches.filter(m => m.group === groupName)
 
   let wins = 0
   let matchesPlayed = 0
+  let points = 0
 
   groupMatches.forEach(match => {
     // Check if player is in this match
     const isPlayer1 = match.player1?._id === playerId
     const isPlayer2 = match.player2?._id === playerId
-    const isInBattleRoyale = match.players?.some(p => p._id === playerId)
 
-    if (isPlayer1 || isPlayer2 || isInBattleRoyale) {
+    if (isPlayer1 || isPlayer2) {
       // Only count if match has a winner (match is complete)
       if (match.winner) {
         matchesPlayed++
-        if (match.winner._id === playerId) {
+        const isWinner = match.winner._id === playerId
+
+        if (isWinner) {
           wins++
+        }
+
+        // Calculate points for Table Tennis based on score differential
+        if (props.tournament?.gameName === 'Table Tennis' && match.score) {
+          points += parseTableTennisScore(match.score, isWinner, isPlayer1)
         }
       }
     }
   })
 
-  // 3 points per win for Table Tennis
-  const points = wins * 3
-
   return { wins, matchesPlayed, points }
 }
 
-// Sort players by points (descending), then by wins
+// Sort players by wins (descending), then by points (for Krunker: sort by kills only)
 const sortedGroups = computed(() => {
   if (!props.tournament?.groups) return {}
 
@@ -54,13 +148,18 @@ const sortedGroups = computed(() => {
       const statsA = calculatePlayerStats(a._id, groupName)
       const statsB = calculatePlayerStats(b._id, groupName)
 
-      // Sort by points first
-      if (statsB.points !== statsA.points) {
+      // For Krunker, sort by kills (points) only
+      if (props.tournament?.gameName === 'Krunker') {
         return statsB.points - statsA.points
       }
 
-      // If points are equal, sort by wins
-      return statsB.wins - statsA.wins
+      // For other games, sort by wins first
+      if (statsB.wins !== statsA.wins) {
+        return statsB.wins - statsA.wins
+      }
+
+      // If wins are equal, sort by points
+      return statsB.points - statsA.points
     })
   })
 
@@ -143,8 +242,8 @@ const sortedGroups = computed(() => {
               </span>
             </div>
 
-            <!-- Wins -->
-            <div class="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
+            <!-- Wins (hidden for Krunker) -->
+            <div v-if="tournament.gameName !== 'Krunker'" class="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
               <span class="text-[8px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Wins</span>
               <span :class="[
                 'font-black text-xs sm:text-sm px-2 py-1 rounded-lg w-full text-center',

@@ -236,7 +236,7 @@ const filteredMatches = computed(() => {
           </span>
         </div>
 
-        <div class="relative font-black mb-3 sm:mb-4 text-center text-sm sm:text-base bg-gradient-to-r from-purple-300 to-pink-300 text-transparent bg-clip-text">{{ getMatchTitle(match) }}</div>
+        <div class="relative font-black mb-3 sm:mb-4 text-center text-sm sm:text-base text-purple-300">{{ getMatchTitle(match) }}</div>
         
         <div v-if="match.winner" class="relative text-center text-sm font-bold text-green-300 mb-3 bg-green-900/20 py-2 px-3 rounded-lg border border-green-500/30">
           🏆 Winner: {{ match.winner?.name || 'Unknown' }}
